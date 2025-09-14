@@ -1,18 +1,11 @@
-FROM python:3.11-slim
+FROM docker:20.10-dind
 
-RUN apt-get update && apt-get install -y \
-    python3-venv \
-    python3-dev \
-    gcc \
-    libusb-1.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/deps
 
-WORKDIR /app
+COPY deps/ /app/deps/
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apk add --no-cache dos2unix bash && \
+    dos2unix /app/deps/run.sh /app/deps/build.sh && \
+    chmod +x /app/deps/run.sh /app/deps/build.sh
 
-COPY prepare_esp.py .
-COPY ca.crt .
-
-ENTRYPOINT ["python3", "prepare_esp.py"]
+ENTRYPOINT ["/app/deps/run.sh"]
