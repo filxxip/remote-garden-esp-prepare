@@ -1,0 +1,17 @@
+FROM alpine:latest AS builder
+
+RUN apk add --no-cache git build-base
+
+WORKDIR /tmp
+
+ARG MKLITTLEFS_REF=master
+RUN git clone --depth 1 --branch ${MKLITTLEFS_REF} --recurse-submodules \
+    https://github.com/earlephilhower/mklittlefs.git
+
+WORKDIR /tmp/mklittlefs
+RUN make -j"$(nproc)"
+
+FROM alpine:latest
+RUN apk add --no-cache libstdc++
+COPY --from=builder /tmp/mklittlefs/mklittlefs /usr/local/bin/mklittlefs
+ENTRYPOINT ["/usr/local/bin/mklittlefs"]
