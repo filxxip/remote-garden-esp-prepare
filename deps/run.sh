@@ -12,7 +12,7 @@ trap 'rm -rf spiffs.bin spiffs_data' EXIT
 # TOKEN=$1
 TOKEN=${TOKEN:-token}
 PORT=${PORT:-/dev/ttyUSB0}
-URL=http://localhost:3000/api/admin/esp/create
+URL=http://192.168.100.3:3000/api/admin/esp/create
 FLASH_OFFSET=0x220000
 LITTLEFS_SIZE=0x60000
 
