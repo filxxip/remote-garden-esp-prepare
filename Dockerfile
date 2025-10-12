@@ -1,11 +1,15 @@
 FROM docker:20.10-dind
 
-WORKDIR /app/deps
+WORKDIR /app
 
 COPY deps/ /app/deps/
 
-RUN apk add --no-cache dos2unix bash && \
-    dos2unix /app/deps/run.sh /app/deps/build.sh && \
-    chmod +x /app/deps/run.sh /app/deps/build.sh
+COPY run.sh /app/
 
-ENTRYPOINT ["/app/deps/run.sh"]
+RUN apk add --no-cache dos2unix bash && \
+    dos2unix /app/run.sh /app/deps/build.sh && \
+    chmod +x /app/run.sh /app/deps/build.sh
+
+VOLUME ["/firmware"]
+
+ENTRYPOINT ["/app/run.sh"]
