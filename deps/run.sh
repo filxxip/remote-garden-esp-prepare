@@ -23,7 +23,7 @@ LITTLEFS_SIZE=0x60000
 
 FIRMWARE_DIR=/firmware
 BOOTLOADER_BIN=${FIRMWARE_DIR}/bootloader.bin
-BOOTLOADER_OFFSET=0x1000
+BOOTLOADER_OFFSET=0x0
 
 PARTITIONS_BIN=${FIRMWARE_DIR}/partition-table.bin
 PARTITIONS_OFFSET=0x8000
@@ -49,7 +49,7 @@ mkdir -p spiffs_data
 
 echo "[1/5] Reading MAC from ESP at $PORT..."
 MAC=$(docker run --rm --device=${PORT}:${PORT} espressif/idf:latest \
-  esptool.py --chip esp32 --port ${PORT} read_mac 2>/dev/null \
+  esptool.py --chip esp32s3 --port ${PORT} read_mac 2>/dev/null \
   | grep "MAC:" \
   | awk '{print $2}' \
   | tr -d ':' \
@@ -122,7 +122,9 @@ echo " LittleFS image created ($SIZE)"
 echo "[4/5] Erasing ESP32 flash..."
 echo "[4/5] Erasing ESP32 flash..."
 docker run --rm --device=${PORT}:${PORT} espressif/idf:latest \
-  esptool.py --chip esp32 --port ${PORT} erase_flash --force
+  esptool.py --chip esp32s3 --port ${PORT} erase_flash
+
+# add --force if needed during encryption
 
 echo "Flash erased"
 
@@ -141,26 +143,13 @@ for file in "$BOOTLOADER_BIN" "$PARTITIONS_BIN" "$OTA_DATA_BIN" "$APP_BIN"; do
   fi
 done
 
-# BOOTLOADER_SIZE=$(stat -c%s "$BOOTLOADER_BIN" 2>/dev/null || stat -f%z "$BOOTLOADER_BIN" 2>/dev/null)
-# MAX_BOOTLOADER_SIZE=$((0x8000 - 0x1000))  # 28672 bytes
-
-# if [ $BOOTLOADER_SIZE -gt $MAX_BOOTLOADER_SIZE ]; then
-#   echo "ERROR: Bootloader is too large!"
-#   echo "Bootloader size: $BOOTLOADER_SIZE bytes"
-#   echo "Maximum allowed: $MAX_BOOTLOADER_SIZE bytes"
-#   echo "Bootloader will overlap with partition table at 0x8000"
-#   exit 1
-# fi
-
 if [ $MISSING_FILES -gt 0 ]; then
   echo "$MISSING_FILES firmware file(s) missing!"
   exit 1
 fi
 
-# Utwórz volume dla plików do flashowania
 docker volume create flash-files
 
-# Skopiuj wszystkie pliki do volume
 CONTAINER_ID=$(docker create -v flash-files:/flash alpine true)
 docker cp ${BOOTLOADER_BIN} ${CONTAINER_ID}:/flash/bootloader.bin
 docker cp ${PARTITIONS_BIN} ${CONTAINER_ID}:/flash/partition-table.bin
@@ -171,15 +160,29 @@ docker rm ${CONTAINER_ID}
 
 echo "Files prepared in volume, starting flash process..."
 
-# Flashowanie z named volume
+
+# To enable encryption:
+
+# docker run --rm --device=${PORT}:${PORT} \
+#   -v flash-files:/flash \
+#   espressif/idf:latest \
+#   esptool.py --chip esp32s3 --port ${PORT} --baud 460800 \
+#     --before default-reset --after hard-reset \
+#     write_flash --encrypt --flash-mode dio --flash-freq 40m --flash-size detect \
+#     0x1000 /flash/bootloader.bin \
+#     0x8000 /flash/partition-table.bin \
+#     0x18000 /flash/ota_data_initial.bin \
+#     0x20000 /flash/esp32_dev_app.bin \
+#     0x220000 /flash/littlefs.bin
+
 docker run --rm --device=${PORT}:${PORT} \
   -v flash-files:/flash \
   espressif/idf:latest \
-  esptool.py --chip esp32 --port ${PORT} --baud 460800 \
+  esptool.py --chip esp32s3 --port ${PORT} --baud 460800 \
     --before default-reset --after hard-reset \
-    write_flash --encrypt --flash-mode dio --flash-freq 40m --flash-size detect \
-    0x1000 /flash/bootloader.bin \
-    0x10000 /flash/partition-table.bin \
+    write_flash --flash-mode dio --flash-freq 40m --flash-size detect \
+    0x0 /flash/bootloader.bin \
+    0x8000 /flash/partition-table.bin \
     0x18000 /flash/ota_data_initial.bin \
     0x20000 /flash/esp32_dev_app.bin \
     0x220000 /flash/littlefs.bin
