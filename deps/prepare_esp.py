@@ -5,7 +5,7 @@ import argparse
 import shutil
 import requests
 
-DATA_DIR = "spiffs_data"
+DATA_DIR = "/app/spiffs_data"
 BIN_FILE = "spiffs.bin"
 DEFAULT_CA_PATH = "/app/ca.crt"
 DEFAULT_API_URL = "http://192.168.100.3:3000/api/admin/esp/create"
@@ -34,10 +34,13 @@ def prepare_files(mac, secret, ca_path):
 
 
 def register_device_remotely(mac: str, secret: str, api_url: str, token: str):
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
     payload = {"mac": mac, "secret": secret}
     headers = {"Authorization": f"Bearer {token}"}
     try:
-        r = requests.post(api_url, json=payload, headers=headers, timeout=10)
+        r = requests.post(api_url, json=payload, headers=headers, timeout=10, verify=False)
         r.raise_for_status()
         logger.info("ESP device registered via API.")
     except requests.exceptions.RequestException as e:

@@ -16,7 +16,11 @@ fi
 
 docker run --rm -it \
   --privileged \
+  --network host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -v docker-storage:/var/lib/docker \
   $PORT_ARG \
   $TOKEN_ARG \
+  $URL_ARG \
+  $FIRMWARE_ARG \
   esp-wrapper
