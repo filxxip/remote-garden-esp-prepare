@@ -1,6 +1,26 @@
 #!/bin/bash
 set -e
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --url)
+      URL="$2"
+      shift 2
+      ;;
+    --token)
+      TOKEN="$2"
+      shift 2
+      ;;
+    --port)
+      PORT="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      exit 1
+      ;;
+  esac
+done
 
 if [ ! -S /var/run/docker.sock ]; then
     echo "Docker socket not found, starting dockerd..."
@@ -9,7 +29,6 @@ if [ ! -S /var/run/docker.sock ]; then
 else
     echo "Using Docker from host via mounted socket"
 fi
-
 echo "[0/5] Building needed images"
 /app/deps/build.sh
 
