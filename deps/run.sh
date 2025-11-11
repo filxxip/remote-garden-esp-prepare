@@ -93,7 +93,6 @@ mkdir -p spiffs_data
 docker cp ${CONTAINER_ID}:/data/. spiffs_data/
 docker rm ${CONTAINER_ID}
 
-# Usuń tymczasowy volume
 docker volume rm spiffs-temp
 
 echo "DEBUG: Files after copy:"
