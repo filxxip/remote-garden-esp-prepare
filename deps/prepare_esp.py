@@ -8,7 +8,7 @@ import requests
 DATA_DIR = "/app/spiffs_data"
 BIN_FILE = "spiffs.bin"
 DEFAULT_CA_PATH = "/app/ca.crt"
-DEFAULT_API_URL = "http://192.168.100.3:3000/api/admin/esp/create"
+DEFAULT_API_URL = "http://localhost:3000/api/admin/esp/create"
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
